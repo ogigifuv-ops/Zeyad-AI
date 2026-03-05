@@ -2,32 +2,46 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 
-st.set_page_config(page_title="Zeyad AI Diagnostics", page_icon="🔍")
+# إعداد الصفحة
+st.set_page_config(page_title="Zeyad AI", page_icon="🚀")
 
-# 🔑 المفتاح بتاعك
+# المفتاح اللي شغال معاك
 api_key = "AIzaSyCn9CHItDoA-H3sdmWNmR_A1K3HGKw51c4"
-
-st.title("🔍 Zeyad AI - فاحص الأعطال")
 
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # تم تعديل الاسم لـ 'gemini-pro' عشان يشتغل فوراً
+        model = genai.GenerativeModel('gemini-pro')
+        # للموديل اللي بيشوف الصور
+        vision_model = genai.GenerativeModel('gemini-pro-vision')
         
-        prompt = st.chat_input("اكتب أي حاجة هنا للتجربة...")
-        
-        if prompt:
+        st.title("🚀 Zeyad AI - المساعد الذكي")
+
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]): st.markdown(msg["content"])
+
+        uploaded_file = st.file_uploader("📸 ارفع صورة يحللها زياد", type=["jpg", "jpeg", "png"])
+
+        if prompt := st.chat_input("اسأل زياد..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"): st.markdown(prompt)
+
             with st.chat_message("assistant"):
                 try:
-                    # محاولة الاتصال بجوجل
-                    response = model.generate_content(prompt)
-                    st.markdown(response.text)
-                except Exception as e:
-                    # المرة دي هيطبع لنا الغلط الحقيقي بدل كلمة "مشغول"
-                    st.error(f"العطل الحقيقي هو: {str(e)}")
-                    st.info("لو طلع لك 'API_KEY_INVALID'، يبقى المفتاح محتاج يتغير.")
-                    st.info("لو طلع لك 'User location not supported'، يبقى لازم نغير السيرفر.")
+                    if uploaded_file:
+                        img = Image.open(uploaded_file)
+                        response = vision_model.generate_content([prompt, img])
+                    else:
+                        response = model.generate_content(prompt)
                     
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                except Exception as e:
+                    st.error(f"فيه مشكلة بسيطة: {e}")
+                        
     except Exception as e:
-        st.error(f"خطأ في الإعدادات: {e}")
+        st.error("تأكد من إعدادات المفتاح")
