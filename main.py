@@ -30,8 +30,7 @@ st.markdown("""
     /* شكل فقاعات الشات */
     .stChatMessage { border-radius: 15px; margin-bottom: 10px; padding: 10px; }
     </style>
-    """, unsafe_allow_index=True)
-
+    """, unsafe_allow_html=True)
 # 2. الهيدر (العنوان)
 col1, col2 = st.columns([1, 4])
 with col1:
