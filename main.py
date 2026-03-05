@@ -47,3 +47,4 @@ if gemini_key:
                     try:
                         img = Image.open(uploaded_file)
                         response = model.generate_content([prompt
+
