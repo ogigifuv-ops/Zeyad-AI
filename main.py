@@ -1,70 +1,65 @@
 import streamlit as st
-from groq import Groq
+import google.generativeai as genai
 import random
-import base64
 from PIL import Image
-import io
 
-st.set_page_config(page_title="Zeyad AI - Vision Pro", page_icon="👁️")
+# إعداد الصفحة
+st.set_page_config(page_title="Zeyad AI - Gemini", page_icon="🚀")
 
-api_key = "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"
+# المفتاح اللي أنت بعته يا بطل
+gemini_key = "AIzaSyCn9CHItDoA-H3sdmWNmR_A1K3HGKw51c4"
 
-if api_key:
-    client = Groq(api_key=api_key)
-    st.title("👁️ Zeyad AI - المساعد الذكي")
-    st.caption("تطوير: زياد | شات، رسم، وتحليل صور احترافي")
+if gemini_key:
+    try:
+        genai.configure(api_key=gemini_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        st.title("🚀 Zeyad AI - المساعد الذكي")
+        st.caption("تطوير: المبرمج زياد | مدعوم بمحرك Google Gemini")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "system", "content": "أنت Zeyad AI، مطورك هو زياد. أنت خبير في تحليل الصور والدردشة."}]
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
 
-    for msg in st.session_state.messages:
-        if msg["role"] != "system":
-            with st.chat_message(msg["role"]): st.markdown(msg["content"])
+        # عرض الشات القديم
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
 
-    # زرار الرفع (فوق خانة الدردشة)
-    uploaded_file = st.file_uploader("📸 ارفع صورتك هنا لزياد", type=["jpg", "jpeg", "png"])
+        # زرار الرفع فوق الشات مباشرة
+        uploaded_file = st.file_uploader("📸 ارفع صورة لزياد يحللها", type=["jpg", "jpeg", "png"])
 
-    if prompt := st.chat_input("اسأل زياد عن الصورة أو دردش..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
+        if prompt := st.chat_input("اسأل زياد عن صورة أو دردش معه..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
-        with st.chat_message("assistant"):
-            if uploaded_file:
-                with st.spinner("زياد يحلل الصورة الآن..."):
-                    try:
-                        # تحويل الصورة بطريقة تضمن إنها تتقرأ صح
-                        image = Image.open(uploaded_file).convert("RGB")
-                        buffer = io.BytesIO()
-                        image.save(buffer, format="JPEG")
-                        base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                        
-                        response = client.chat.completions.create(
-                            model="llama-3.2-11b-vision-preview",
-                            messages=[{
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": prompt},
-                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                                ]
-                            }]
-                        )
-                        res = response.choices[0].message.content
-                        st.markdown(res)
-                        st.session_state.messages.append({"role": "assistant", "content": res})
-                    except Exception:
-                        st.error("مشكلة في قراءة الصورة، جرب صورة تانية أو ارفعها مرة كمان.")
-            else:
-                # نظام الدردشة والرسم العادي
+            with st.chat_message("assistant"):
+                # 1. لو طلب رسم صورة
                 if any(word in prompt for word in ["ارسم", "صورة", "draw"]):
-                    seed = random.randint(1, 99999)
-                    img_url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&seed={seed}"
-                    st.markdown(f"![Zeyad Art]({img_url})")
-                    st.session_state.messages.append({"role": "assistant", "content": f"تم رسم: {prompt}"})
+                    with st.spinner("زياد بيرسم..."):
+                        seed = random.randint(1, 99999)
+                        img_url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&seed={seed}"
+                        st.markdown(f"![Zeyad Art]({img_url})")
+                        st.session_state.messages.append({"role": "assistant", "content": f"تم رسم: {prompt}"})
+                
+                # 2. تحليل صورة باستخدام Gemini
+                elif uploaded_file:
+                    with st.spinner("زياد يشوف الصورة..."):
+                        try:
+                            img = Image.open(uploaded_file)
+                            response = model.generate_content([prompt, img])
+                            st.markdown(response.text)
+                            st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        except:
+                            st.error("مشكلة في تحليل الصورة.")
+                
+                # 3. دردشة عادية
                 else:
                     try:
-                        chat_res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=st.session_state.messages)
-                        res = chat_res.choices[0].message.content
-                        st.markdown(res)
-                        st.session_state.messages.append({"role": "assistant", "content": res})
+                        response = model.generate_content(prompt)
+                        st.markdown(response.text)
+                        st.session_state.messages.append({"role": "assistant", "content": response.text})
                     except:
-                        st.error("المحرك مشغول")
+                        st.error("المحرك مشغول حالياً.")
+    except Exception as e:
+        st.error("فيه مشكلة في مفتاح الـ API.")
