@@ -5,18 +5,16 @@ from PIL import Image
 # إعداد الصفحة
 st.set_page_config(page_title="Zeyad AI", page_icon="🚀")
 
-# المفتاح اللي شغال معاك
+# المفتاح بتاعك
 api_key = "AIzaSyCn9CHItDoA-H3sdmWNmR_A1K3HGKw51c4"
 
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        # تم تعديل الاسم لـ 'gemini-pro' عشان يشتغل فوراً
-        model = genai.GenerativeModel('gemini-pro')
-        # للموديل اللي بيشوف الصور
-        vision_model = genai.GenerativeModel('gemini-pro-vision')
+        # الأسماء دي هي اللي شغالة دلوقتي رسمي
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
-        st.title("🚀 Zeyad AI - المساعد الذكي")
+        st.title("🚀 Zeyad AI")
 
         if "messages" not in st.session_state:
             st.session_state.messages = []
@@ -24,7 +22,7 @@ if api_key:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-        uploaded_file = st.file_uploader("📸 ارفع صورة يحللها زياد", type=["jpg", "jpeg", "png"])
+        uploaded_file = st.file_uploader("📸 ارفع صورة", type=["jpg", "jpeg", "png"])
 
         if prompt := st.chat_input("اسأل زياد..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
@@ -32,9 +30,10 @@ if api_key:
 
             with st.chat_message("assistant"):
                 try:
+                    # الموديل ده بيقدر يشيل نص وصور مع بعض
                     if uploaded_file:
                         img = Image.open(uploaded_file)
-                        response = vision_model.generate_content([prompt, img])
+                        response = model.generate_content([prompt, img])
                     else:
                         response = model.generate_content(prompt)
                     
