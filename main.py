@@ -1,61 +1,46 @@
 import streamlit as st
 from groq import Groq
 
-# 1. إعدادات الصفحة واللمسات الجمالية
-st.set_page_config(page_title="Zeyad AI", page_icon="⚡", layout="centered")
+# إعدادات واجهة زياد الاحترافية
+st.set_page_config(page_title="Zeyad AI Pro", page_icon="🚀")
 
-# CSS لتحسين الشكل وإخفاء الرسائل التنبيهية
-st.markdown("""
-    <style>
-    .stApp { background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%); color: white; }
-    .stButton>button { border-radius: 12px; background-color: #4facfe; color: white; border: none; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 2. الهيدر (العنوان)
-st.title("⚡ Zeyad AI - المساعد الذكي")
-st.caption("برمجة وتطوير: زياد | مدعوم بأقوى محرك ذكاء اصطناعي")
-
-# 3. التحقق من المفتاح السري تلقائياً
-if "GROQ_API_KEY" in st.secrets:
-    api_key = st.secrets["GROQ_API_KEY"]
-else:
-    # لو المفتاح مش موجود في Secrets هيطلبه من الجنب
-    api_key = st.sidebar.text_input("🔑 Groq API Key", type="password")
+# المفتاح بتاعك ثابت جوه الكود عشان الراحة
+api_key = "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"
 
 if api_key:
     client = Groq(api_key=api_key)
+    st.title("🚀 Zeyad AI - النسخة المستقرة")
+    st.caption("هذه النسخة مبرمجة لتعمل بأقصى طاقة ممكنة دون توقف")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # عرض الرسائل السابقة
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # صندوق الدردشة
-    if prompt := st.chat_input("اسأل Zeyad AI أي شيء..."):
+    if prompt := st.chat_input("اسأل زياد..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            try:
-                response = client.chat.completions.create(
-                    model="mixtral-8x7b-32768",
-                    messages=st.session_state.messages
-                )
-                full_response = response.choices[0].message.content
-                st.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-            except Exception as e:
-                st.error("حدث خطأ في الاتصال، تأكد من صحة الـ API Key")
-else:
-    st.warning("⚠️ برجاء إضافة الـ API Key في إعدادات Secrets لتشغيل الموقع تلقائياً.")
-
-# أزرار سريعة
-st.sidebar.title("🛠️ أدوات سريعة")
-if st.sidebar.button("✨ تنظيف المحادثة"):
-    st.session_state.messages = []
-    st.rerun()
+            # ميزة الطوارئ: لو موديل وقف، التاني يشتغل
+            models = ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"]
+            success = False
+            for model_name in models:
+                try:
+                    response = client.chat.completions.create(
+                        model=model_name,
+                        messages=st.session_state.messages
+                    )
+                    res = response.choices[0].message.content
+                    st.markdown(res)
+                    st.session_state.messages.append({"role": "assistant", "content": res})
+                    success = True
+                    break # لو نجح يخرج من المحاولة
+                except:
+                    continue # لو فشل يجرب الموديل اللي بعده
+            
+            if not success:
+                st.error("للأسف جميع المحركات مضغوطة حالياً، جرب كمان 5 دقائق.")
