@@ -31,4 +31,23 @@ if api_key:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        with st.chat_message
+        with st.chat_message("assistant"):
+            # ميزة صناعة الصور
+            if any(word in prompt for word in ["ارسم", "صورة", "draw", "image"]):
+                with st.spinner("زياد بيجهز لك الرسمة..."):
+                    seed = random.randint(1, 99999) # لضمان عدم تعليق الصورة
+                    image_url = f"https://pollinations.ai/p/{prompt.replace(' ', '_')}?width=1024&height=1024&seed={seed}"
+                    st.image(image_url, caption=f"إهداء من زياد: {prompt}")
+                    st.session_state.messages.append({"role": "assistant", "content": f"تم رسم: {prompt}"})
+            else:
+                # ميزة الدردشة
+                try:
+                    chat_res = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=st.session_state.messages
+                    )
+                    res = chat_res.choices[0].message.content
+                    st.markdown(res)
+                    st.session_state.messages.append({"role": "assistant", "content": res})
+                except:
+                    st.error("المحرك مشغول، جرب تاني يا بطل.")
